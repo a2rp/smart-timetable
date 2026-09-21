@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart Timetable</title>
+    <link rel="stylesheet" href="./style.css" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="./images/favicon.ico" />
+</head>
+
+<body>
+    <!-- Header: title + global actions -->
+    <header class="app-header">
+        <h1>Smart Timetable</h1>
+        <div class="header-actions">
+            <button id="exportPngButton" class="btn">🖼️ Export PNG</button>
+            <button id="printButton" class="btn">🖨️ Print</button>
+            <div class="divider" aria-hidden="true"></div>
+            <button id="exportJsonButton" class="btn">⬇️ Export JSON</button>
+            <label class="btn">
+                ⬆️ Import JSON
+                <input id="importJsonInput" type="file" accept="application/json" hidden />
+            </label>
+            <div class="divider" aria-hidden="true"></div>
+            <button id="clearAllButton" class="btn btn-danger">♻️ Clear All</button>
+        </div>
+    </header>
+
+    <main class="layout">
+        <!-- Left: create/edit controls and timeline settings -->
+        <aside class="left-panel" aria-label="Create and manage sessions">
+            <form id="createForm" class="card" autocomplete="off">
+                <h2>Create Session</h2>
+
+                <div class="form-grid">
+                    <label>
+                        <span>Title*</span>
+                        <input id="titleInput" type="text" placeholder="e.g., Data Structures" required />
+                    </label>
+                    <label>
+                        <span>Location</span>
+                        <input id="locationInput" type="text" placeholder="e.g., Room 204" />
+                    </label>
+                    <label>
+                        <span>Color</span>
+                        <input id="colorInput" type="color" value="#22c55e" />
+                    </label>
+                    <label>
+                        <span>Start Time*</span>
+                        <input id="startTimeInput" type="time" value="09:00" required />
+                    </label>
+                    <label>
+                        <span>Duration (mins)</span>
+                        <input id="durationInput" type="number" min="30" step="30" max="240" value="60" />
+                    </label>
+                </div>
+
+                <fieldset class="days">
+                    <legend>Days*</legend>
+                    <label><input type="checkbox" name="day" value="0" /> Mon</label>
+                    <label><input type="checkbox" name="day" value="1" /> Tue</label>
+                    <label><input type="checkbox" name="day" value="2" /> Wed</label>
+                    <label><input type="checkbox" name="day" value="3" /> Thu</label>
+                    <label><input type="checkbox" name="day" value="4" /> Fri</label>
+                    <label><input type="checkbox" name="day" value="5" /> Sat</label>
+                    <label><input type="checkbox" name="day" value="6" /> Sun</label>
+                </fieldset>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">➕ Add to Timetable</button>
+                    <button type="button" id="resetFormButton" class="btn">Reset</button>
+                </div>
+
+                <p class="help-text">
+                    Tip: Drag blocks to move. Double-click a block to edit. Select a block and use
+                    arrow keys (←/→ day, ↑/↓ 30-min).
+                </p>
+            </form>
+
+            <section class="card mini-settings">
+                <h2>Timeline</h2>
+                <div class="form-grid">
+                    <label>
+                        <span>Start Hour</span>
+                        <input id="startHourInput" type="number" min="5" max="12" value="8" />
+                    </label>
+                    <label>
+                        <span>End Hour</span>
+                        <input id="endHourInput" type="number" min="13" max="23" value="20" />
+                    </label>
+                    <label>
+                        <span>Slot (mins)</span>
+                        <input id="slotMinutesInput" type="number" min="15" step="15" max="60" value="30" />
+                    </label>
+                </div>
+                <button id="applyTimelineButton" class="btn">Apply</button>
+            </section>
+        </aside>
+
+        <!-- Right: timetable grid -->
+        <section class="timetable-panel">
+            <div class="timetable card">
+                <div class="timetable-header">
+                    <div class="cell cell--corner"></div>
+                    <div class="cell">Mon</div>
+                    <div class="cell">Tue</div>
+                    <div class="cell">Wed</div>
+                    <div class="cell">Thu</div>
+                    <div class="cell">Fri</div>
+                    <div class="cell">Sat</div>
+                    <div class="cell">Sun</div>
+                </div>
+
+                <div class="timetable-body">
+                    <div class="time-rail" id="timeRail" aria-hidden="true"></div>
+                    <div class="day-columns" id="dayColumns" aria-label="Timetable grid"></div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <span class="dot ok"></span> Free
+                <span class="dot warn"></span> Overlap
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <dialog id="editDialog">
+        <form method="dialog" class="edit-form">
+            <h3>Edit Session</h3>
+            <input type="hidden" id="editBlockId" />
+            <label>
+                <span>Title</span>
+                <input id="editTitle" type="text" />
+            </label>
+            <label>
+                <span>Location</span>
+                <input id="editLocation" type="text" />
+            </label>
+            <label>
+                <span>Color</span>
+                <input id="editColor" type="color" />
+            </label>
+            <label>
+                <span>Duration (mins)</span>
+                <input id="editDuration" type="number" min="30" step="30" max="240" />
+            </label>
+            <menu>
+                <button value="cancel" class="btn">Cancel</button>
+                <button id="deleteBlockButton" value="delete" class="btn btn-danger">Delete</button>
+                <button id="saveBlockButton" value="save" class="btn btn-primary">Save</button>
+            </menu>
+        </form>
+    </dialog>
+
+    <footer class="app-footer">
+        <span>&copy; <span id="year"></span>
+        </span>
+        <span>
+            <a href="https://www.ashishranjan.net" target="_blank">ashishranjan.net</a>
+        </span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+    <script src="./script.js" defer></script>
+</body>
+
+</html>
