@@ -1,10 +1,4 @@
-/* Smart Timetable - Vanilla JS
-   - Add/Edit/Delete sessions
-   - Drag & drop with threshold
-   - Keyboard arrows: ↑/↓ = slot, ←/→ = day
-   - Export PNG/JSON, Import JSON, Print
-   - Auto-saves last working state to localStorage
-*/
+/* Smart Timetable - vanilla JavaScript timetable workspace. */
 
 // ---------- Defaults ----------
 const defaultSettings = {
@@ -687,7 +681,7 @@ function formatBlockSummary(block) {
     );
     const title = block.title || "Session";
     const loc = block.location ? ` · ${block.location}` : "";
-    return `${title}${loc} — ${day} ${start}–${end}`;
+    return `${title}${loc} - ${day} ${start}-${end}`;
 }
 
 // ---------- Boot ----------

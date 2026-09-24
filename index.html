@@ -4,27 +4,35 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Smart Timetable</title>
+    <title>Smart Timetable | Weekly planning workspace</title>
+    <meta name="description" content="A browser-based weekly timetable with drag and drop sessions, overlap detection, import, export, and print support." />
+    <meta property="og:title" content="Smart Timetable" />
+    <meta property="og:description" content="Plan weekly sessions in a responsive local-first timetable." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://a2rp.github.io/smart-timetable/" />
+    <meta property="og:image" content="https://a2rp.github.io/smart-timetable/preview.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="./style.css" />
     <meta name="color-scheme" content="dark light" />
-    <link rel="icon" type="image/svg+xml" href="./images/favicon.ico" />
+    <link rel="icon" href="./public/favicon.ico" />
+    <link rel="preload" as="image" href="./public/logo.png" />
 </head>
 
 <body>
     <!-- Header: title + global actions -->
     <header class="app-header">
-        <h1>Smart Timetable</h1>
+        <div class="brand-lockup">
+            <a class="brand-logo" href="./" aria-label="Smart Timetable home"><img src="./public/logo.png" alt="" /></a>
+            <div><h1>Smart Timetable</h1><span>Weekly planning workspace</span></div>
+        </div>
         <div class="header-actions">
-            <button id="exportPngButton" class="btn">🖼️ Export PNG</button>
-            <button id="printButton" class="btn">🖨️ Print</button>
+            <button id="exportPngButton" class="btn" title="Export timetable as PNG">Export PNG</button>
+            <button id="printButton" class="btn" title="Print timetable">Print</button>
             <div class="divider" aria-hidden="true"></div>
-            <button id="exportJsonButton" class="btn">⬇️ Export JSON</button>
-            <label class="btn">
-                ⬆️ Import JSON
-                <input id="importJsonInput" type="file" accept="application/json" hidden />
-            </label>
+            <button id="exportJsonButton" class="btn" title="Export timetable JSON">Export JSON</button>
+            <label class="btn">Import JSON<input id="importJsonInput" type="file" accept="application/json" hidden /></label>
             <div class="divider" aria-hidden="true"></div>
-            <button id="clearAllButton" class="btn btn-danger">♻️ Clear All</button>
+            <button id="clearAllButton" class="btn btn-danger">Clear All</button>
         </div>
     </header>
 
@@ -157,11 +165,10 @@
     </dialog>
 
     <footer class="app-footer">
-        <span>&copy; <span id="year"></span>
-        </span>
-        <span>
-            <a href="https://www.ashishranjan.net" target="_blank">ashishranjan.net</a>
-        </span>
+        <div class="footer-copy">Copyright &copy; <span id="year"></span> <a href="https://www.ashishranjan.net/" target="_blank" rel="noopener noreferrer">Ashish Ranjan</a></div>
+        <div class="footer-links" aria-label="Social and support links">
+            <a href="https://www.ashishranjan.net/" target="_blank" rel="noopener noreferrer" aria-label="Portfolio" title="Portfolio">↗</a><a href="https://github.com/a2rp" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">GH</a><a href="https://codepen.io/ash1198" target="_blank" rel="noopener noreferrer" aria-label="CodePen" title="CodePen">CP</a><a href="https://www.linkedin.com/in/aashishranjan" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">in</a><a href="https://www.facebook.com/theash.ashish/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook">f</a><a href="https://www.youtube.com/@ashishranjan-ashz?sub_confirmation=1" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube">▶</a><a href="https://a2rp-donation-page.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Support" title="Support">♥</a><a href="https://buymeacoffee.com/a2rp" target="_blank" rel="noopener noreferrer" aria-label="Buy Me a Coffee" title="Buy Me a Coffee">☕</a><a href="https://patreon.com/a2rp" target="_blank" rel="noopener noreferrer" aria-label="Patreon" title="Patreon">P</a>
+        </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
