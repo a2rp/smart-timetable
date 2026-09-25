@@ -13,7 +13,7 @@ A local-first HTML, SCSS, and JavaScript timetable builder for students and solo
 - Timeline start, end, and slot controls
 - LocalStorage persistence with JSON import/export
 - PNG export through html2canvas and print-ready layout
-- Fixed branded header, icon-only footer links, and responsive layout
+- Fixed branded header, icon-only footer links, responsive layout, and floating go-to-top control
 
 ## Tech stack
 
