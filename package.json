@@ -1,17 +1,1 @@
-{
-  "name": "_pages-deploy",
-  "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "gh-pages -d . -b gh-pages"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "gh-pages": "^6.3.0"
-  }
-}
+{"name":"smart-timetable-pages","private":true}

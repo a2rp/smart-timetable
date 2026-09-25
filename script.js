@@ -53,6 +53,13 @@ const applyTimelineButton = document.getElementById("applyTimelineButton");
 
 // Footer year
 document.getElementById("year").textContent = String(new Date().getFullYear());
+const goTopButton = document.getElementById("goTopButton");
+if (goTopButton) {
+    const updateTopButton = () => goTopButton.classList.toggle("visible", window.scrollY > 420);
+    window.addEventListener("scroll", updateTopButton, { passive: true });
+    goTopButton.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    updateTopButton();
+}
 
 // ---------- Utils ----------
 function createId(prefix = "id") {
