@@ -126,18 +126,91 @@ function overlaps(a, b) {
 const STORAGE_KEY_STATE = "smartTimetable.state";
 
 function saveCurrentState() {
-    localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(state));
+    try {
+        localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(state));
+    } catch {
+        showToast("Could not save this timetable in browser storage.", true);
+    }
+}
+function validateTimetableData(value) {
+    if (
+        !value ||
+        typeof value !== "object" ||
+        Array.isArray(value) ||
+        !value.settings ||
+        typeof value.settings !== "object" ||
+        Array.isArray(value.settings) ||
+        !Array.isArray(value.blocks)
+    ) {
+        return null;
+    }
+
+    const settings = { ...defaultSettings, ...value.settings };
+    if (
+        !Number.isInteger(settings.startHour) ||
+        settings.startHour < 5 ||
+        settings.startHour > 12 ||
+        !Number.isInteger(settings.endHour) ||
+        settings.endHour < 13 ||
+        settings.endHour > 23 ||
+        settings.endHour <= settings.startHour ||
+        ![15, 30, 45, 60].includes(settings.slotMinutes)
+    ) {
+        return null;
+    }
+
+    const ids = new Set();
+    const validBlocks = value.blocks.every((block) => {
+        if (
+            !block ||
+            typeof block !== "object" ||
+            Array.isArray(block) ||
+            typeof block.id !== "string" ||
+            !block.id ||
+            ids.has(block.id) ||
+            typeof block.title !== "string" ||
+            typeof block.location !== "string" ||
+            typeof block.color !== "string" ||
+            !/^#[\da-f]{6}$/i.test(block.color) ||
+            !Number.isInteger(block.dayIndex) ||
+            block.dayIndex < 0 ||
+            block.dayIndex > 6 ||
+            !Number.isInteger(block.startMinutes) ||
+            !Number.isInteger(block.durationMinutes) ||
+            block.durationMinutes < 30 ||
+            block.durationMinutes > 240 ||
+            block.startMinutes < settings.startHour * 60 ||
+            block.startMinutes + block.durationMinutes > settings.endHour * 60
+        ) {
+            return false;
+        }
+
+        ids.add(block.id);
+        return true;
+    });
+
+    return validBlocks ? { settings, blocks: value.blocks } : null;
 }
 function loadSavedState() {
-    const raw = localStorage.getItem(STORAGE_KEY_STATE);
+    let raw;
+    try {
+        raw = localStorage.getItem(STORAGE_KEY_STATE);
+    } catch {
+        showToast("Browser storage is unavailable. Changes will stay in this tab.", true);
+        return;
+    }
     if (!raw) return;
     try {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.settings && Array.isArray(parsed.blocks)) {
-            state.settings = { ...state.settings, ...parsed.settings };
-            state.blocks = parsed.blocks;
+        const saved = validateTimetableData(JSON.parse(raw));
+        if (!saved) {
+            showToast("Saved timetable data is invalid and was not loaded.", true);
+            return;
         }
-    } catch {}
+        state.settings = saved.settings;
+        state.blocks = saved.blocks;
+    } catch {
+        showToast("Saved timetable data could not be read.", true);
+    }
 }
 
 // ---------- Rendering ----------
@@ -194,12 +267,16 @@ function renderBlocks() {
         const end = timeLabelFromMinutes(
             block.startMinutes + block.durationMinutes
         );
-        el.innerHTML = `
-      <div class="title">${block.title || "Session"}</div>
-      <div class="meta">${start}–${end}${
+        const titleEl = document.createElement("div");
+        titleEl.className = "title";
+        titleEl.textContent = block.title || "Session";
+
+        const metaEl = document.createElement("div");
+        metaEl.className = "meta";
+        metaEl.textContent = `${start}–${end}${
             block.location ? ` · ${block.location}` : ""
-        }</div>
-    `;
+        }`;
+        el.append(titleEl, metaEl);
 
         const topPx =
             ((block.startMinutes - startOfDayMinutes()) /
@@ -312,8 +389,14 @@ function attachDragHandlers(blockEl) {
         blockEl.setPointerCapture(e.pointerId);
         blockEl.style.opacity = "0.9";
     };
+    const stopTracking = () => {
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
+        window.removeEventListener("pointercancel", onPointerCancel);
+    };
 
     const onPointerDown = (e) => {
+        if (pointerDown) return;
         pointerDown = true;
         dragging = false;
         activePointerId = e.pointerId;
@@ -327,6 +410,10 @@ function attachDragHandlers(blockEl) {
         start.top = rect.top - parentDayEl.getBoundingClientRect().top;
         start.dayIndex = Number(parentDayEl.dataset.dayIndex);
         start.blockId = blockEl.dataset.blockId;
+
+        window.addEventListener("pointermove", onPointerMove);
+        window.addEventListener("pointerup", onPointerUp);
+        window.addEventListener("pointercancel", onPointerCancel);
     };
 
     const onPointerMove = (e) => {
@@ -363,6 +450,7 @@ function attachDragHandlers(blockEl) {
 
     const onPointerUp = (e) => {
         if (e.pointerId !== activePointerId) return;
+        stopTracking();
 
         if (!dragging) {
             pointerDown = false; // treat as click/dblclick, do nothing
@@ -401,9 +489,18 @@ function attachDragHandlers(blockEl) {
         renderBlocks();
     };
 
+    const onPointerCancel = (e) => {
+        if (e.pointerId !== activePointerId) return;
+
+        const shouldRestorePosition = dragging;
+        stopTracking();
+        pointerDown = false;
+        dragging = false;
+        blockEl.style.opacity = "1";
+        if (shouldRestorePosition) renderBlocks();
+    };
+
     blockEl.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
 }
 
 // ---------- Keyboard movement ----------
@@ -523,8 +620,17 @@ applyTimelineButton.addEventListener("click", () => {
         return;
     }
 
-    state.settings.startHour = clamp(startHour, 5, 12);
-    state.settings.endHour = clamp(endHour, 13, 23);
+    const nextStartHour = clamp(startHour, 5, 12);
+    const nextEndHour = clamp(endHour, 13, 23);
+    const availableMinutes = (nextEndHour - nextStartHour) * 60;
+    if (state.blocks.some((block) => block.durationMinutes > availableMinutes)) {
+        showToast("Timeline must fit every session before it can be shortened.", true);
+        renderAll();
+        return;
+    }
+
+    state.settings.startHour = nextStartHour;
+    state.settings.endHour = nextEndHour;
     state.settings.slotMinutes = slotMinutes;
 
     renderAll();
@@ -568,12 +674,13 @@ importJsonInput.addEventListener("change", async (ev) => {
     try {
         const text = await file.text();
         const parsed = JSON.parse(text);
-        if (!parsed || !parsed.settings || !Array.isArray(parsed.blocks)) {
-            showToast("Invalid JSON format.", true);
+        const imported = validateTimetableData(parsed);
+        if (!imported) {
+            showToast("Invalid timetable data. The current schedule was kept.", true);
             return;
         }
-        state.settings = { ...defaultSettings, ...parsed.settings };
-        state.blocks = parsed.blocks;
+        state.settings = imported.settings;
+        state.blocks = imported.blocks;
         renderAll();
         saveCurrentState();
         showToast("Imported JSON.");
